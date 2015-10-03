@@ -125,11 +125,13 @@
     <ClCompile Include="..\inc\aie\Gizmos.cpp" />
     <ClCompile Include="..\inc\gl_core_4_4.c" />
     <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="DemoApp.cpp" />
     <ClCompile Include="Source.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\inc\aie\Gizmos.h" />
     <ClInclude Include="..\inc\gl_core_4_4.h" />
+    <ClInclude Include="Application.h" />
     <ClInclude Include="Camera.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
