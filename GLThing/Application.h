@@ -3,6 +3,7 @@
 #include <gl_core_4_4.h>
 #include "GLFW\glfw3.h"
 #include "Camera.h"
+#include "fbx\FBXFile.h"
 
 class Application
 {
@@ -27,6 +28,15 @@ class DemoApp : public Application
 
 	unsigned int indexCount;
 	unsigned int VBO, IBO, VAO;
+
+	// VBO - Vertex Buffer Object
+	//  - storing data/information pertaining to the vertices for a mesh
+	//  - position, texcoord
+	// IBO - Index Buffer Object
+	//  - storing the order in which these vertices are drawn
+	// VAO - Vertex Array Object
+	//  - a container for the VBO and IBO
+
 	unsigned int texture;
 
 	float currentTime = 0;
@@ -34,9 +44,23 @@ class DemoApp : public Application
 	float deltaTime = 0;
 
 	void generateGrid(unsigned int rows, unsigned int cols);
+	void generateQuad();
+
+	FBXFile* fbx;
 };
 
 class RenderingApp : public Application
 {
+	virtual bool init();		// initialization and loading
+	virtual bool update();		// per frame calculations
+	virtual void draw();		// draw calls
+	virtual void exit();		// uninitializations and unloading
 
+	unsigned int projectID;
+	FlyCamera camera;
+	void createOpenGLBuffers(FBXFile* fbx);
+	void cleanupOpenGLBuffers(FBXFile* fbx);
+
+	FBXFile* fbx;
+	unsigned int program;
 };

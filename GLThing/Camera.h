@@ -13,7 +13,6 @@ private:
 	mat4 worldTransform;
 	mat4 viewTransform;
 	mat4 projectionTransform;
-	mat4 projectionViewTransform;
 
 public:
 	virtual void update(float deltaTime) = 0;	// abstract, to be implemented by classes that inherit from this

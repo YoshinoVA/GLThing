@@ -9,10 +9,6 @@
 
 using namespace glm;
 
-
-
-
-
 int main()
 {
 	Application *app = new DemoApp();

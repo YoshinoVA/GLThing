@@ -7,14 +7,14 @@ void Camera::setPerspective(float fieldOfView, float aspectRatio, float nearPlan
 
 void Camera::setLookAt(vec3 From, vec3 To, vec3 Up)
 {
-	glm::lookAt(From, To, Up);
+	viewTransform = glm::lookAt(From, To, Up);
 }
 
 void Camera::setPosition(vec3 Position)
 {
-	worldTransform[0][0] = Position[0];
-	worldTransform[0][1] = Position[1];
-	worldTransform[0][2] = Position[2];
+	worldTransform[3][0] = Position[0];
+	worldTransform[3][1] = Position[1];
+	worldTransform[3][2] = Position[2];
 }
 
 mat4 Camera::getProjection()
@@ -34,12 +34,12 @@ mat4 Camera::getView()
 
 mat4 Camera::getProjectionView()
 {
-	return projectionViewTransform;
+	return getProjection() * getView();
 }
 
 void FlyCamera::update(float deltaTime)
 {
-
+	// to be implemented
 }
 
 void FlyCamera::setSpeed(float speed)
