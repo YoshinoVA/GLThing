@@ -16,6 +16,60 @@ struct Vertex
 	vec4 color;
 };
 
+void DemoApp::createOpenGLBuffers(FBXFile* fbx)
+{
+	for (unsigned int i = 0; i < fbx->getMeshCount(); ++i)
+	{
+		FBXMeshNode* mesh = fbx->getMeshByIndex(i);
+
+		unsigned int* glData = new unsigned int[3];
+		glGenVertexArrays(1, &glData[0]);
+		glBindVertexArray(glData[0]);
+
+		glGenBuffers(1, &glData[1]);
+		glGenBuffers(1, &glData[2]);
+
+		glBindBuffer(GL_ARRAY_BUFFER, glData[1]);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, glData[2]);
+
+		glBufferData(GL_ARRAY_BUFFER,
+			mesh->m_vertices.size() * sizeof(FBXVertex),
+			mesh->m_vertices.data(), GL_STATIC_DRAW);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+			mesh->m_indices.size() * sizeof(unsigned int),
+			mesh->m_indices.data(), GL_STATIC_DRAW);
+
+		glEnableVertexAttribArray(0); // position
+		glVertexAttribPointer(0, 4, GL_FLOAT, GL_TRUE,
+			sizeof(FBXVertex), ((char*)0) + FBXVertex::NormalOffset);
+
+		glBindVertexArray(0);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+		mesh->m_userData = glData;
+	}
+
+	fbx = new FBXFile();
+	fbx->load("./resources/FBX/soulspear/soulspear.fbx");
+}
+
+void DemoApp::cleanupOpenGLBuffers(FBXFile* fbx)
+{
+	for (unsigned int i = 0; i < fbx->getMeshCount(); ++i)
+	{
+		FBXMeshNode* mesh = fbx->getMeshByIndex(i);
+
+		unsigned int* glData = (unsigned int*)mesh->m_userData;
+
+		glDeleteVertexArrays(1, &glData[0]);
+		glDeleteBuffers(1, &glData[1]);
+		glDeleteBuffers(1, &glData[2]);
+
+		delete[] glData;
+	}
+}
+
 void DemoApp::generateGrid(unsigned int rows, unsigned int cols)
 {
 	Vertex* aoVerts = new Vertex[rows * cols];
@@ -146,16 +200,16 @@ bool DemoApp::init()
 		return -3;
 	}
 
-	// START RENDERING CODE
+	// START RENDERING CODE 
 
 	// vertex shader
 	const char* vsSource = "#version 410\n \
 						layout(location=0) in vec4 Position; \
-						layout(location=1) in vec2 TexCoord; \
-						out vec2 vTexCoord; \
+						layout(location=1) in vec4 Normal; \
+						out vec4 vNormal; \
 						uniform mat4 ProjectionView; \
-						void main() { vTexCoord = TexCoord; \
-						gl_Position = ProjectionView * Position; \}";
+						void main() { vNormal = Normal; \
+						gl_Position = ProjectionView * Position; }";
 
 	unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
 	glShaderSource(vertexShader, 1, (const char**)&vsSource, 0);
@@ -163,11 +217,9 @@ bool DemoApp::init()
 
 	// fragment shader
 	const char* fsSource = "#version 410\n \
-						in vec2 vTexCoord; \
+						in vec4 vNormal; \
 						out vec4 FragColor; \
-						uniform sampler2D diffuse; \
-						void main() {FragColor = texture(diffuse, vTexCoord);}";
-	//void main() {FragColor = texture(diffuse, vTexCoord);}";
+						void main() {vec4(1,1,1,1);}";
 
 	unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
 	glShaderSource(fragmentShader, 1, (const char**)&fsSource, 0);
@@ -179,6 +231,7 @@ bool DemoApp::init()
 	glAttachShader(projectID, vertexShader);
 	glAttachShader(projectID, fragmentShader);
 	glLinkProgram(projectID);
+
 
 	int success = GL_FALSE;
 
@@ -209,6 +262,10 @@ bool DemoApp::init()
 
 	unsigned char* data = stbi_load("crate.png", &imageWidth, &imageHeight, &imageFormat, STBI_default);
 
+	fbx = new FBXFile();
+	fbx->load("../resources/FBX/soulspear/soulspear.fbx");
+	createOpenGLBuffers(fbx);
+
 	glGenTextures(1, &texture);
 	glBindTexture(GL_TEXTURE_2D, texture);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imageWidth, imageHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
@@ -238,6 +295,24 @@ bool DemoApp::update()
 	{
 		return false;
 	}
+
+	bool load(const char* filename,
+		FBXFile::UNIT_SCALE scale = FBXFile::UNITS_METER,
+		bool loadTextures = true,
+		bool loadAnimations = true,
+		bool flipTextureY = true);
+
+	unsigned int getMeshCount();
+
+	FBXMeshNode* getMeshByIndex(unsigned int index);
+
+	unsigned int vertexAttributes;
+	FBXMaterial* material;
+	std::vector<FBXVertex> vertices;
+	std::vector<unsigned int> indices;
+	glm::mat4 localTransform;
+	glm::mat4 globalTransform;
+	void* userData;
 
 	// delta time
 	currentTime = glfwGetTime();
@@ -272,6 +347,16 @@ void DemoApp::draw()
 	glBindVertexArray(VAO);
 	glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, nullptr);
 
+	//for (unsigned int i = 0; i < fbx->getMeshCount(); ++i)
+	//{
+	//	FBXMeshNode* mesh = fbx->getMeshByIndex(i);
+
+	//	unsigned int* glData = (unsigned int*)mesh->m_userData;
+
+	//	glBindVertexArray(glData[0]);
+	//	glDrawElements(GL_TRIANGLES, (unsigned int)mesh->m_indices.size(), GL_UNSIGNED_INT, 0);
+	//}
+
 	glfwSwapBuffers(window);
 	glfwPollEvents();
 }
@@ -282,6 +367,9 @@ void DemoApp::draw()
 // - destroy the window
 void DemoApp::exit()
 {
+	cleanupOpenGLBuffers(fbx);
+	glDeleteProgram(program);
+	fbx->unload();
 	Gizmos::destroy();
 	glfwTerminate();
 }

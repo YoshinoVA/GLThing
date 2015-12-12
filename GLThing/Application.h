@@ -47,20 +47,8 @@ class DemoApp : public Application
 	void generateQuad();
 
 	FBXFile* fbx;
-};
 
-class RenderingApp : public Application
-{
-	virtual bool init();		// initialization and loading
-	virtual bool update();		// per frame calculations
-	virtual void draw();		// draw calls
-	virtual void exit();		// uninitializations and unloading
-
-	unsigned int projectID;
-	FlyCamera camera;
+	unsigned int program;
 	void createOpenGLBuffers(FBXFile* fbx);
 	void cleanupOpenGLBuffers(FBXFile* fbx);
-
-	FBXFile* fbx;
-	unsigned int program;
 };

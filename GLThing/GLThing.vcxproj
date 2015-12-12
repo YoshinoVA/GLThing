@@ -126,7 +126,6 @@
     <ClCompile Include="..\inc\gl_core_4_4.c" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="DemoApp.cpp" />
-    <ClCompile Include="RenderingApp.cpp" />
     <ClCompile Include="Source.cpp" />
   </ItemGroup>
   <ItemGroup>

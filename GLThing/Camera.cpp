@@ -10,7 +10,7 @@ void Camera::setLookAt(vec3 From, vec3 To, vec3 Up)
 	viewTransform = glm::lookAt(From, To, Up);
 }
 
-void Camera::setPosition(vec3 Position)
+void Camera::setPosition(vec3 Position) 
 {
 	worldTransform[3][0] = Position[0];
 	worldTransform[3][1] = Position[1];
