@@ -179,7 +179,7 @@ void DemoApp::generateQuad()
 	glBindBuffer(GL_ARRAY_BUFFER, 0);			// VBO or IBO
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);	// whatever's left
 
-	indexCount = 6;
+	//indexCount = 6;
 }
 
 // - creates the window
@@ -208,8 +208,10 @@ bool DemoApp::init()
 						layout(location=0) in vec4 Position; \
 						layout(location=1) in vec4 Normal; \
 						out vec4 vNormal; \
+						out vec4 vPosition;\
 						uniform mat4 ProjectionView; \
 						void main() { vNormal = Normal; \
+						vPosition = Position; \
 						gl_Position = ProjectionView * Position; }";
 
 	unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
@@ -219,8 +221,23 @@ bool DemoApp::init()
 	// fragment shader
 	const char* fsSource = "#version 410\n \
 						in vec4 vNormal; \
+						in vec4 vPosition; \
 						out vec4 FragColor; \
-						void main() {vec4(1,1,1,1);}";
+						uniform vec3 LightDir; \
+						uniform vec3 LightColour; \
+						uniform vec3 CameraPos; \
+						uniform float SpecPow; \
+						void main() { \
+						float d = max(0, \
+						dot(normalize(vNormal.xyz), LightDir)); \
+						vec3 E = normalize(CameraPos - \
+										 vPosition.xyz); \
+						vec3 R = reflect(-LightDir, \
+										vNormal.xyz); \
+						float s = max(0, dot(E, R)); \
+						s = pow(s, SpecPow); \
+						FragColor = vec4(LightColour * d + \
+						LightColour * s, 1);} \ ";
 
 	unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
 	glShaderSource(fragmentShader, 1, (const char**)&fsSource, 0);

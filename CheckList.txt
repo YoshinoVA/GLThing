@@ -1,0 +1,7 @@
+1. Getting objects to draw on-screen (check)
+2. Texturing (diffuse map) (check)
+3. Lighting (check)
+4. Advanced Texturing (normal mapping, specular)
+5. Shadows
+6. Deferred Rendering w/ all of the above
+7. Camera Movement
