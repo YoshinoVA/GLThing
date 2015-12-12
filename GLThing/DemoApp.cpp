@@ -41,6 +41,10 @@ void DemoApp::createOpenGLBuffers(FBXFile* fbx)
 
 		glEnableVertexAttribArray(0); // position
 		glVertexAttribPointer(0, 4, GL_FLOAT, GL_TRUE,
+			sizeof(FBXVertex), 0);
+
+		glEnableVertexAttribArray(1); // normal
+		glVertexAttribPointer(1, 4, GL_FLOAT, GL_TRUE,
 			sizeof(FBXVertex), ((char*)0) + FBXVertex::NormalOffset);
 
 		glBindVertexArray(0);
@@ -49,9 +53,6 @@ void DemoApp::createOpenGLBuffers(FBXFile* fbx)
 
 		mesh->m_userData = glData;
 	}
-
-	fbx = new FBXFile();
-	fbx->load("./resources/FBX/soulspear/soulspear.fbx");
 }
 
 void DemoApp::cleanupOpenGLBuffers(FBXFile* fbx)
@@ -347,15 +348,15 @@ void DemoApp::draw()
 	glBindVertexArray(VAO);
 	glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, nullptr);
 
-	//for (unsigned int i = 0; i < fbx->getMeshCount(); ++i)
-	//{
-	//	FBXMeshNode* mesh = fbx->getMeshByIndex(i);
+	for (unsigned int i = 0; i < fbx->getMeshCount(); ++i)
+	{
+		FBXMeshNode* mesh = fbx->getMeshByIndex(i);
 
-	//	unsigned int* glData = (unsigned int*)mesh->m_userData;
+		unsigned int* glData = (unsigned int*)mesh->m_userData;
 
-	//	glBindVertexArray(glData[0]);
-	//	glDrawElements(GL_TRIANGLES, (unsigned int)mesh->m_indices.size(), GL_UNSIGNED_INT, 0);
-	//}
+		glBindVertexArray(glData[0]);
+		glDrawElements(GL_TRIANGLES, (unsigned int)mesh->m_indices.size(), GL_UNSIGNED_INT, 0);
+	}
 
 	glfwSwapBuffers(window);
 	glfwPollEvents();
