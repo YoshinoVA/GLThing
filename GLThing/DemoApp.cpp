@@ -47,9 +47,9 @@ void DemoApp::createOpenGLBuffers(FBXFile* fbx)
 		glVertexAttribPointer(1, 4, GL_FLOAT, GL_TRUE,
 			sizeof(FBXVertex), ((char*)0) + FBXVertex::NormalOffset);
 
-		glBindVertexArray(0);
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glBindVertexArray(0);	// unbind VAO (this has to come first)
+		glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind VBO
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); // unbind IBO
 
 		mesh->m_userData = glData;
 	}
@@ -208,7 +208,7 @@ bool DemoApp::init()
 						layout(location=0) in vec4 Position; \
 						layout(location=1) in vec4 Normal; \
 						out vec4 vNormal; \
-						out vec4 vPosition;\
+						out vec4 vPosition; \
 						uniform mat4 ProjectionView; \
 						void main() { vNormal = Normal; \
 						vPosition = Position; \
@@ -224,20 +224,16 @@ bool DemoApp::init()
 						in vec4 vPosition; \
 						out vec4 FragColor; \
 						uniform vec3 LightDir; \
-						uniform vec3 LightColour; \
+						uniform vec3 LightColor; \
 						uniform vec3 CameraPos; \
 						uniform float SpecPow; \
 						void main() { \
-						float d = max(0, \
-						dot(normalize(vNormal.xyz), LightDir)); \
-						vec3 E = normalize(CameraPos - \
-										 vPosition.xyz); \
-						vec3 R = reflect(-LightDir, \
-										vNormal.xyz); \
+						float d = max(0, dot(normalize(vNormal.xyz), LightDir)); \
+						vec3 E = normalize(CameraPos - vPosition.xyz); \
+						vec3 R = reflect(-LightDir, vNormal.xyz); \
 						float s = max(0, dot(E, R)); \
 						s = pow(s, SpecPow); \
-						FragColor = vec4(LightColour * d + \
-						LightColour * s, 1);} \ ";
+						FragColor = vec4(LightColor * d + LightColor * s, 1);} \ ";
 
 	unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
 	glShaderSource(fragmentShader, 1, (const char**)&fsSource, 0);
@@ -361,6 +357,26 @@ void DemoApp::draw()
 
 	loc = glGetUniformLocation(projectID, "diffuse");
 	glUniform1i(loc, 0);
+
+	glm::vec3 lightColor = {1.0f, 1.0f, 1.0f};
+
+	loc = glGetUniformLocation(projectID, "LightColor");
+	glUniform3fv(loc, 1, glm::value_ptr(lightColor));
+
+	glm::vec3 lightDir = {0.0f, 1.0f, 0.0f};
+
+	loc = glGetUniformLocation(projectID, "LightDir");
+	glUniform3fv(loc, 1, glm::value_ptr(lightDir));
+
+	glm::vec3 cameraPos = {0.3f, 0.3f, 0.3f};
+
+	loc = glGetUniformLocation(projectID, "CameraPos");
+	glUniform3fv(loc, 1, glm::value_ptr(cameraPos));
+
+	glm::float1 specPow = (128.0f);
+
+	loc = glGetUniformLocation(projectID, "SpecPow");
+	glUniform1f(loc, 128.0f);
 
 	glBindVertexArray(VAO);
 	glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, nullptr);
