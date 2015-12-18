@@ -27,7 +27,7 @@ class DemoApp : public Application
 	unsigned int projectID;
 
 	unsigned int indexCount;
-	unsigned int VBO, IBO, VAO;
+	unsigned int VBO, IBO, VAO, FBO;
 
 	// VBO - Vertex Buffer Object
 	//  - storing data/information pertaining to the vertices for a mesh
@@ -39,6 +39,7 @@ class DemoApp : public Application
 
 	unsigned int texture;
 	unsigned int normalmap;
+	unsigned int fboTexture, fboDepth;
 
 	float currentTime = 0;
 	float lastTime = 0;

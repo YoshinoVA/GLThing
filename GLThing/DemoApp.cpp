@@ -45,9 +45,17 @@ void DemoApp::createOpenGLBuffers(FBXFile* fbx)
 		glVertexAttribPointer(0, 4, GL_FLOAT, GL_TRUE,
 			sizeof(FBXVertex), 0);
 
-		glEnableVertexAttribArray(1); // normal
-		glVertexAttribPointer(1, 4, GL_FLOAT, GL_TRUE,
+		glEnableVertexAttribArray(1); // texcoord
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_TRUE,
+			sizeof(FBXVertex), ((char*)0) + FBXVertex::TexCoord1Offset);
+
+		glEnableVertexAttribArray(2); // normal
+		glVertexAttribPointer(2, 4, GL_FLOAT, GL_TRUE,
 			sizeof(FBXVertex), ((char*)0) + FBXVertex::NormalOffset);
+
+		glEnableVertexAttribArray(3); // tangent
+		glVertexAttribPointer(3, 4, GL_FLOAT, GL_TRUE,
+			sizeof(FBXVertex), ((char*)0) + FBXVertex::TangentOffset);
 
 		glBindVertexArray(0);	// unbind VAO (this has to come first)
 		glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind VBO
@@ -167,6 +175,9 @@ void DemoApp::generateQuad()
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * 6, indexData, GL_STATIC_DRAW);
 
+	glGenFramebuffers(1, &FBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+
 	glEnableVertexAttribArray(0);	// Position
 	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), 0);
 
@@ -183,6 +194,7 @@ void DemoApp::generateQuad()
 	glBindVertexArray(0);						// VAO comes off first
 	glBindBuffer(GL_ARRAY_BUFFER, 0);			// VBO or IBO
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);	// whatever's left
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	//indexCount = 6;
 }
@@ -222,6 +234,7 @@ bool DemoApp::init()
 						uniform mat4 ProjectionView; \
 						void main() { vTexCoord = TexCoord; \
 						vNormal = Normal.xyz; \
+						vTangent = Tangent.xyz; \
 						vBiTangent = cross(vNormal, vTangent); \
 						gl_Position = ProjectionView * Position; }";
 
@@ -292,13 +305,14 @@ bool DemoApp::init()
 	int imageFormat = 0;
 
 	//Load Diffuse mapping
-	unsigned char* data = stbi_load("../resources/textures/rock_diffuse.tga", &imageWidth, &imageHeight, &imageFormat, STBI_default);
+	unsigned char* data = stbi_load("../resources/FBX/soulspear/soulspear_diffuse.tga", &imageWidth, &imageHeight, &imageFormat, STBI_default);
 
 	fbx = new FBXFile();
 	fbx->load("../resources/FBX/soulspear/soulspear.fbx");
 	createOpenGLBuffers(fbx);
 
 	glGenTextures(1, &texture);
+	glActiveTexture(0);
 	glBindTexture(GL_TEXTURE_2D, texture);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imageWidth, imageHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -307,15 +321,37 @@ bool DemoApp::init()
 	stbi_image_free(data);
 
 	//Load Normal Mapping
-	data = stbi_load("../resources/textures/rock_normal.tga", &imageWidth, &imageHeight, &imageFormat, STBI_default);
+	data = stbi_load("../resources/FBX/soulspear/soulspear_normal.tga", &imageWidth, &imageHeight, &imageFormat, STBI_default);
 
 	glGenTextures(1, &normalmap);
+	glActiveTexture(1);
 	glBindTexture(GL_TEXTURE_2D, normalmap);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imageWidth, imageHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
 	stbi_image_free(data);
+
+	glGenTextures(1, &fboTexture);
+	glBindTexture(GL_TEXTURE_2D, fboTexture);
+	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, 512, 512);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, fboTexture, 0);
+
+	glGenRenderbuffers(1, &fboDepth);
+	glBindRenderbuffer(GL_RENDERBUFFER, fboDepth);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, fboDepth);
+
+	GLenum drawBuffers[] = { GL_COLOR_ATTACHMENT0 };
+	glDrawBuffers(1, drawBuffers);
+
+	GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+	if (status != GL_FRAMEBUFFER_COMPLETE)
+		printf("Framebuffer Error! U dun fucked up.\n");
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	//generateGrid(10, 10);
 	generateQuad();
@@ -388,6 +424,7 @@ void DemoApp::draw()
 
 	loc = glGetUniformLocation(projectID, "diffuse");
 	glUniform1i(loc, 0);
+
 	loc = glGetUniformLocation(projectID, "normal");
 	glUniform1i(loc, 1);
 
@@ -411,9 +448,9 @@ void DemoApp::draw()
 	loc = glGetUniformLocation(projectID, "SpecPow");
 	glUniform1f(loc, 128.0f);
 
-	vec3 light(sin(glfwGetTime()), 1, cos(glfwGetTime()));
-	loc = glGetUniformLocation(program, "LightDir");
-	glUniform3f(loc, light.x, light.y, light.z);
+	//vec3 light(sin(glfwGetTime()), 1, cos(glfwGetTime()));
+	//loc = glGetUniformLocation(program, "LightDir");
+	//glUniform3f(loc, light.x, light.y, light.z);
 
 	glBindVertexArray(VAO);
 	glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, nullptr);

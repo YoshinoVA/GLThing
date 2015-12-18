@@ -1,7 +1,10 @@
 1. Getting objects to draw on-screen (check)
 2. Texturing (diffuse map) (check)
-3. Lighting (I got it, then it failed)
-4. Advanced Texturing (backtracking)
+3. Lighting (check)
+4. Advanced Texturing (check)
 5. Shadows
+  a. Render Targets
+  b. Post-Process
+  c. Shadows
 6. Deferred Rendering w/ all of the above
 7. Camera Movement
