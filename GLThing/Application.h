@@ -36,6 +36,8 @@ class DemoApp : public Application
 	//  - storing the order in which these vertices are drawn
 	// VAO - Vertex Array Object
 	//  - a container for the VBO and IBO
+	// FBO - Framebuffer Object
+	//  - a buffer that meshes can be drawn to
 
 	unsigned int texture;
 	unsigned int normalmap;

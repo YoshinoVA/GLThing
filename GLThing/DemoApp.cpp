@@ -10,6 +10,21 @@
 
 using namespace glm;
 
+void APIENTRY oglErrorDefaultCallback(GLenum source,
+	GLenum type,
+	GLuint id,
+	GLenum severity,
+	GLsizei length,
+	const GLchar *message,
+	const void *userParam)
+{
+	// if 'GL_DEBUG_OUTPUT_SYNCHRONOUS' is enabled, you can place a
+	// breakpoint here and the callstack should reflect the problem location!
+	// e.g. glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+
+	std::cerr << message << std::endl;
+}
+
 struct Vertex
 {
 	float x, y, z, w;
@@ -67,6 +82,9 @@ void DemoApp::createOpenGLBuffers(FBXFile* fbx)
 
 void DemoApp::cleanupOpenGLBuffers(FBXFile* fbx)
 {
+	if (fbx == nullptr)
+		return;
+
 	for (unsigned int i = 0; i < fbx->getMeshCount(); ++i)
 	{
 		FBXMeshNode* mesh = fbx->getMeshByIndex(i);
@@ -146,11 +164,13 @@ void DemoApp::cleanupOpenGLBuffers(FBXFile* fbx)
 
 void DemoApp::generateQuad()
 {
-	Vertex vertexData[] = {
-		{ -5, 0, 5, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1 },
-		{  5, 0, 5, 1, 0, 1, 0, 0, 1, 0, 0, 0, 1, 1 },
-		{  5, 0,-5, 1, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0 },
-		{ -5, 0,-5, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0 },
+	float vertexData[] = {
+	// Position		  // ST (or UVs)
+	//   X, Y, Z, W   S, T
+		-5, 0, -5, 1, 0, 0, // Vertex 1
+		 5, 0, -5, 1, 1, 0, // Vertex 2
+		 5, 10,-5, 1, 1, 1, // Vertex 3
+		-5, 10,-5, 1, 0, 1, // Vertex 4
 	};
 	unsigned int indexData[] = {
 		0, 1, 2,
@@ -169,34 +189,24 @@ void DemoApp::generateQuad()
 
 	glGenBuffers(1, &VBO);		// Generation
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);		// Bind it, setting it as the current whatever
-	glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * 4, vertexData, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 24, vertexData, GL_STATIC_DRAW);
 
 	glGenBuffers(1, &IBO);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * 6, indexData, GL_STATIC_DRAW);
 
-	glGenFramebuffers(1, &FBO);
-	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-
 	glEnableVertexAttribArray(0);	// Position
-	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), 0);
+	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(float) * 6, 0);
 
-	glEnableVertexAttribArray(1);	// UVs
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), ((char*)0) + 48);
-
-	glEnableVertexAttribArray(2);	// UVs
-	glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), ((char*)0) + 16);
-
-	glEnableVertexAttribArray(3);	// UVs
-	glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), ((char*)0) + 32);
+	glEnableVertexAttribArray(1);	// TexCoord
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (GLvoid *)(sizeof(float) * 4));
 
 	// once we're done, unbind the buffers
 	glBindVertexArray(0);						// VAO comes off first
 	glBindBuffer(GL_ARRAY_BUFFER, 0);			// VBO or IBO
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);	// whatever's left
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-	//indexCount = 6;
+	indexCount = 6;
 }
 
 // - creates the window
@@ -207,6 +217,7 @@ void DemoApp::generateQuad()
 bool DemoApp::init()
 {
 	glfwInit();
+	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
 
 	window = glfwCreateWindow(800, 600, "Title", nullptr, nullptr);
 
@@ -218,52 +229,39 @@ bool DemoApp::init()
 		return -3;
 	}
 
-	// START RENDERING CODE 
+	if (glDebugMessageCallback)
+	{
+		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+		glDebugMessageCallback(oglErrorDefaultCallback, nullptr);
+
+		GLuint unusedIDs = 0;
+		glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, &unusedIDs, true);
+	}
+
+	// START RENDERING CODE ------------------
 
 	// vertex shader
 	const char* vsSource = "#version 410\n \
-						layout(location=0) in vec4 Position; \
-						layout(location=1) in vec2 TexCoord; \
-						layout(location=2) in vec4 Normal; \
-						layout(location=3) in vec4 Tangent; \
-						out vec2 vTexCoord; \
-						out vec3 vNormal; \
-						out vec3 vTangent; \
-						out vec3 vBiTangent; \
-						out vec4 vPosition; \
-						uniform mat4 ProjectionView; \
-						void main() { vTexCoord = TexCoord; \
-						vNormal = Normal.xyz; \
-						vTangent = Tangent.xyz; \
-						vBiTangent = cross(vNormal, vTangent); \
-						gl_Position = ProjectionView * Position; }";
+							layout(location=0) in vec4 Position; \
+							layout(location=1) in vec2 TexCoord; \
+							out vec2 vTexCoord; \
+							uniform mat4 ProjectionView; \
+							void main() { \
+							vTexCoord = TexCoord; \
+							gl_Position= ProjectionView * Position;}";
+
 
 	unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
 	glShaderSource(vertexShader, 1, (const char**)&vsSource, 0);
 	glCompileShader(vertexShader);
 
 	// fragment shader
-	const char* fsSource = "#version 410\n \
+	const char* fsSource =  "#version 410\n \
 							in vec2 vTexCoord; \
-							in vec3 vNormal; \
-							in vec3 vTangent; \
-							in vec3 vBiTangent; \
 							out vec4 FragColor; \
-							uniform vec3 LightDir; \
 							uniform sampler2D diffuse; \
-							uniform sampler2D normal; \
 							void main() { \
-							mat3 TBN = mat3( \
-							normalize( vTangent ), \
-							normalize( vBiTangent ), \
-							normalize( vNormal )); \
-							vec3 N = texture(normal, \
-							vTexCoord).xyz * 2 - 1; \
-							float d = max( 0, dot( \
-							normalize( TBN * N ), \
-							normalize( LightDir ))); \
-							FragColor = texture(diffuse, vTexCoord); \
-							FragColor.rgb = FragColor.rgb * d;}";
+							FragColor = texture(diffuse, vTexCoord);}";
 
 	unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
 	glShaderSource(fragmentShader, 1, (const char**)&fsSource, 0);
@@ -275,7 +273,6 @@ bool DemoApp::init()
 	glAttachShader(projectID, vertexShader);
 	glAttachShader(projectID, fragmentShader);
 	glLinkProgram(projectID);
-
 
 	int success = GL_FALSE;
 
@@ -295,7 +292,7 @@ bool DemoApp::init()
 	glDeleteShader(vertexShader);
 	glDeleteShader(fragmentShader);
 
-	// loading textures
+	// loading textures -------------------------
 	using glm::vec3;
 	using glm::vec4;
 	using glm::mat4;
@@ -307,12 +304,8 @@ bool DemoApp::init()
 	//Load Diffuse mapping
 	unsigned char* data = stbi_load("../resources/FBX/soulspear/soulspear_diffuse.tga", &imageWidth, &imageHeight, &imageFormat, STBI_default);
 
-	fbx = new FBXFile();
-	fbx->load("../resources/FBX/soulspear/soulspear.fbx");
-	createOpenGLBuffers(fbx);
-
 	glGenTextures(1, &texture);
-	glActiveTexture(0);
+	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imageWidth, imageHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -324,7 +317,7 @@ bool DemoApp::init()
 	data = stbi_load("../resources/FBX/soulspear/soulspear_normal.tga", &imageWidth, &imageHeight, &imageFormat, STBI_default);
 
 	glGenTextures(1, &normalmap);
-	glActiveTexture(1);
+	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, normalmap);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imageWidth, imageHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -332,6 +325,11 @@ bool DemoApp::init()
 
 	stbi_image_free(data);
 
+	// generate FBO
+	glGenFramebuffers(1, &FBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+
+	// generate and bind a texture for the FBO
 	glGenTextures(1, &fboTexture);
 	glBindTexture(GL_TEXTURE_2D, fboTexture);
 	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, 512, 512);
@@ -339,19 +337,29 @@ bool DemoApp::init()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, fboTexture, 0);
 
+	// generate and bind a depth texture for the FBO
 	glGenRenderbuffers(1, &fboDepth);
 	glBindRenderbuffer(GL_RENDERBUFFER, fboDepth);
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
-	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, fboDepth);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, fboDepth);
 
+	// assign attachments to the FBO
+	//  - attachments tell the FBO what textures to render the buffer onto
 	GLenum drawBuffers[] = { GL_COLOR_ATTACHMENT0 };
 	glDrawBuffers(1, drawBuffers);
 
+	// validate/verify that the FBO is in working order
 	GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 	if (status != GL_FRAMEBUFFER_COMPLETE)
 		printf("Framebuffer Error! U dun fucked up.\n");
 
+	// unbind the FBO
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	// Load meshes ---------------------
+	//fbx = new FBXFile();
+	//fbx->load("../resources/FBX/soulspear/soulspear.fbx");
+	//createOpenGLBuffers(fbx);
 
 	//generateGrid(10, 10);
 	generateQuad();
@@ -375,24 +383,6 @@ bool DemoApp::update()
 		return false;
 	}
 
-	bool load(const char* filename,
-		FBXFile::UNIT_SCALE scale = FBXFile::UNITS_METER,
-		bool loadTextures = true,
-		bool loadAnimations = true,
-		bool flipTextureY = true);
-
-	unsigned int getMeshCount();
-
-	FBXMeshNode* getMeshByIndex(unsigned int index);
-
-	unsigned int vertexAttributes;
-	FBXMaterial* material;
-	std::vector<FBXVertex> vertices;
-	std::vector<unsigned int> indices;
-	glm::mat4 localTransform;
-	glm::mat4 globalTransform;
-	void* userData;
-
 	// delta time
 	currentTime = glfwGetTime();
 	deltaTime = currentTime - lastTime;
@@ -404,12 +394,18 @@ bool DemoApp::update()
 // - drawing meshes to the backbuffer
 void DemoApp::draw()
 {
-	mat4 view = glm::lookAt(vec3(5, 5, 5), vec3(0), vec3(0, 1, 0));
+	mat4 view = glm::lookAt(vec3(-10, -10, 10), vec3(0), vec3(0, 1, 0));
 	mat4 projection = glm::perspective(glm::pi<float>() * 0.25f, 16 / 9.f, 0.1f, 1000.f);
+
+	// DRAW TO FRAMEBUFFER-----------
+
+	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+	glViewport(0, 0, 512, 512);
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	Gizmos::clear();
+	Gizmos::addSphere(glm::vec3(0, 0, 0), 5.f, 15, 15, glm::vec4(0, 1, 1, 1));
 	Gizmos::addTransform(glm::mat4(1));
 	Gizmos::draw(projection * view);
 
@@ -452,18 +448,48 @@ void DemoApp::draw()
 	//loc = glGetUniformLocation(program, "LightDir");
 	//glUniform3f(loc, light.x, light.y, light.z);
 
+	//glBindVertexArray(VAO);
+	//glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, nullptr);
+
+	if (fbx != nullptr)
+	{
+		for (unsigned int i = 0; i < fbx->getMeshCount(); ++i)
+		{
+			FBXMeshNode* mesh = fbx->getMeshByIndex(i);
+
+			unsigned int* glData = (unsigned int*)mesh->m_userData;
+
+			glBindVertexArray(glData[0]);
+			glDrawElements(GL_TRIANGLES, (unsigned int)mesh->m_indices.size(), GL_UNSIGNED_INT, 0);
+		}
+	}
+
+	// DRAW TO SCREEEEEEEEEEN-----------
+
+	// bind the framebuffer of the screen (0)
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glViewport(0, 0, 1280, 720);
+
+	glClearColor(0.75f, 0.75f, 0.75f, 1);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	Gizmos::clear();
+	Gizmos::addTransform(glm::mat4(1));
+	Gizmos::draw(projection * view);
+
+	glUseProgram(projectID);
+	loc = glGetUniformLocation(projectID, "ProjectionView");
+	glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(projection * view));
+
+	// bind the framebuffer texture
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, fboTexture);
+	loc = glGetUniformLocation(projectID, "diffuse");
+	glUniform1i(loc, 0);
+
+	// draw a quad with that texture
 	glBindVertexArray(VAO);
 	glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, nullptr);
-
-	for (unsigned int i = 0; i < fbx->getMeshCount(); ++i)
-	{
-		FBXMeshNode* mesh = fbx->getMeshByIndex(i);
-
-		unsigned int* glData = (unsigned int*)mesh->m_userData;
-
-		glBindVertexArray(glData[0]);
-		glDrawElements(GL_TRIANGLES, (unsigned int)mesh->m_indices.size(), GL_UNSIGNED_INT, 0);
-	}
 
 	glfwSwapBuffers(window);
 	glfwPollEvents();
@@ -477,7 +503,8 @@ void DemoApp::exit()
 {
 	cleanupOpenGLBuffers(fbx);
 	glDeleteProgram(program);
-	fbx->unload();
+	if (fbx != nullptr)
+		fbx->unload();
 	Gizmos::destroy();
 	glfwTerminate();
 }
