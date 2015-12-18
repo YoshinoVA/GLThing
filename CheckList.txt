@@ -3,8 +3,8 @@
 3. Lighting (check)
 4. Advanced Texturing (check)
 5. Shadows
-  a. Render Targets
-  b. Post-Process
+  a. Render Targets (check)
+  b. Post-Process (check)
   c. Shadows
 6. Deferred Rendering w/ all of the above
 7. Camera Movement

@@ -24,7 +24,8 @@ class DemoApp : public Application
 	virtual void exit();
 	FlyCamera camera;
 
-	unsigned int projectID;
+	unsigned int modelShader;
+	unsigned int screenShader;
 
 	unsigned int indexCount;
 	unsigned int VBO, IBO, VAO, FBO;

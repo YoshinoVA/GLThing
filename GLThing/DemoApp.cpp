@@ -4,26 +4,12 @@
 #include <glm\glm.hpp>
 #include <glm\ext.hpp>
 #include <iostream>
+#include <fstream>
 //#define STB_IMAGE_IMPLEMENTATION
 #include "stb-master\stb_image.h"
 #include "fbx\FBXFile.h"
 
 using namespace glm;
-
-void APIENTRY oglErrorDefaultCallback(GLenum source,
-	GLenum type,
-	GLuint id,
-	GLenum severity,
-	GLsizei length,
-	const GLchar *message,
-	const void *userParam)
-{
-	// if 'GL_DEBUG_OUTPUT_SYNCHRONOUS' is enabled, you can place a
-	// breakpoint here and the callstack should reflect the problem location!
-	// e.g. glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-
-	std::cerr << message << std::endl;
-}
 
 struct Vertex
 {
@@ -32,6 +18,58 @@ struct Vertex
 	float tx, ty, tz, tw;
 	float s, t;
 };
+
+int loadShader(const char * vertexShaderPath, const char * fragmentShaderPath)
+{
+	// load vertex shader
+	std::ifstream inVert(vertexShaderPath);
+	std::string  vertexShaderContents((std::istreambuf_iterator<char>(inVert)), std::istreambuf_iterator<char>());
+
+	char * vertexSource = new char[vertexShaderContents.length() + 1]; // '\0' - null terminating character
+	strncpy_s(vertexSource, vertexShaderContents.length() + 1, vertexShaderContents.c_str(), vertexShaderContents.length());
+
+	unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
+	glShaderSource(vertexShader, 1, (const char**)&vertexSource, 0);
+	glCompileShader(vertexShader);
+
+	// load fragment shader
+	std::ifstream inFrag(fragmentShaderPath);
+	std::string  fragmentShaderContents((std::istreambuf_iterator<char>(inFrag)), std::istreambuf_iterator<char>());
+
+	char * fragmentSource = new char[fragmentShaderContents.length() + 1]; // '\0' - null terminating character
+	strncpy_s(fragmentSource, fragmentShaderContents.length() + 1, fragmentShaderContents.c_str(), fragmentShaderContents.length());
+
+	unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+	glShaderSource(fragmentShader, 1, (const char**)&fragmentSource, 0);
+	glCompileShader(fragmentShader);
+
+	// assembling the shader program
+	int shaderName = glCreateProgram();
+	glAttachShader(shaderName, vertexShader);
+	glAttachShader(shaderName, fragmentShader);
+	glLinkProgram(shaderName);
+
+	// check that the shader compiled successfully without error
+	int success = GL_FALSE;
+
+	glGetProgramiv(shaderName, GL_LINK_STATUS, &success);
+	if (success == GL_FALSE)
+	{
+		int infoLogLength = 0;
+		glGetProgramiv(shaderName, GL_INFO_LOG_LENGTH, &infoLogLength);
+		char* infoLog = new char[infoLogLength];
+
+		glGetProgramInfoLog(shaderName, GL_INFO_LOG_LENGTH, 0, infoLog);
+		printf("Error: Failed to link shader program.\n");
+		printf("%s\n", infoLog);
+		delete infoLog;
+	}
+
+	glDeleteShader(vertexShader);
+	glDeleteShader(fragmentShader);
+
+	return shaderName;
+}
 
 void DemoApp::createOpenGLBuffers(FBXFile* fbx)
 {
@@ -164,32 +202,31 @@ void DemoApp::cleanupOpenGLBuffers(FBXFile* fbx)
 
 void DemoApp::generateQuad()
 {
+	glm::vec2 halfTexel = 1.0f / glm::vec2(1280, 720) * 0.5f;
+
 	float vertexData[] = {
 	// Position		  // ST (or UVs)
 	//   X, Y, Z, W   S, T
-		-5, 0, -5, 1, 0, 0, // Vertex 1
-		 5, 0, -5, 1, 1, 0, // Vertex 2
-		 5, 10,-5, 1, 1, 1, // Vertex 3
-		-5, 10,-5, 1, 0, 1, // Vertex 4
+		-1, -1, 0, 1,	halfTexel.x, halfTexel.y, // Vertex 1
+		 1, 1, 0, 1,	1 - halfTexel.x, 1 - halfTexel.y, // Vertex 2
+		-1, 1, 0, 1,	halfTexel.x, 1 - halfTexel.y, // Vertex 3
+
+		 -1, -1, 0, 1,	halfTexel.x, halfTexel.y, // Vertex 4
+		  1, -1, 0, 1,	1 - halfTexel.x, halfTexel.y, 
+		  1, 1, 0, 1,	1 - halfTexel.x, 1 - halfTexel.y,
 	};
+
 	unsigned int indexData[] = {
 		0, 1, 2,
 		0, 2, 3,
 	};
-
-	// VAO - Vertex Array Object
-	//   - stores a handle to the VBO and IBO
-	// VBO - Vertex Buffer Object
-	//   - stores our vertex information (e.x. position, UV)
-	// IBO - Index Buffer Object
-	//   - stores the order in which vertices are drawn
 
 	glGenVertexArrays(1, &VAO);
 	glBindVertexArray(VAO);
 
 	glGenBuffers(1, &VBO);		// Generation
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);		// Bind it, setting it as the current whatever
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 24, vertexData, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 6, vertexData, GL_STATIC_DRAW);
 
 	glGenBuffers(1, &IBO);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
@@ -199,7 +236,7 @@ void DemoApp::generateQuad()
 	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(float) * 6, 0);
 
 	glEnableVertexAttribArray(1);	// TexCoord
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (GLvoid *)(sizeof(float) * 4));
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 6, ((char*)0) +16);
 
 	// once we're done, unbind the buffers
 	glBindVertexArray(0);						// VAO comes off first
@@ -229,68 +266,10 @@ bool DemoApp::init()
 		return -3;
 	}
 
-	if (glDebugMessageCallback)
-	{
-		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-		glDebugMessageCallback(oglErrorDefaultCallback, nullptr);
-
-		GLuint unusedIDs = 0;
-		glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, &unusedIDs, true);
-	}
-
 	// START RENDERING CODE ------------------
 
-	// vertex shader
-	const char* vsSource = "#version 410\n \
-							layout(location=0) in vec4 Position; \
-							layout(location=1) in vec2 TexCoord; \
-							out vec2 vTexCoord; \
-							uniform mat4 ProjectionView; \
-							void main() { \
-							vTexCoord = TexCoord; \
-							gl_Position= ProjectionView * Position;}";
-
-
-	unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(vertexShader, 1, (const char**)&vsSource, 0);
-	glCompileShader(vertexShader);
-
-	// fragment shader
-	const char* fsSource =  "#version 410\n \
-							in vec2 vTexCoord; \
-							out vec4 FragColor; \
-							uniform sampler2D diffuse; \
-							void main() { \
-							FragColor = texture(diffuse, vTexCoord);}";
-
-	unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(fragmentShader, 1, (const char**)&fsSource, 0);
-	glCompileShader(fragmentShader);
-
-
-	// assembling the shader program
-	projectID = glCreateProgram();
-	glAttachShader(projectID, vertexShader);
-	glAttachShader(projectID, fragmentShader);
-	glLinkProgram(projectID);
-
-	int success = GL_FALSE;
-
-	glGetProgramiv(projectID, GL_LINK_STATUS, &success);
-	if (success == GL_FALSE)
-	{
-		int infoLogLength = 0;
-		glGetProgramiv(projectID, GL_INFO_LOG_LENGTH, &infoLogLength);
-		char* infoLog = new char[infoLogLength];
-
-		glGetProgramInfoLog(projectID, GL_INFO_LOG_LENGTH, 0, infoLog);
-		printf("Error: Failed to link shader program.\n");
-		printf("%s\n", infoLog);
-		delete infoLog;
-	}
-
-	glDeleteShader(vertexShader);
-	glDeleteShader(fragmentShader);
+	modelShader = loadShader("../resources/shaders/basic.vert","../resources/shaders/basic.frag");
+	screenShader = loadShader("../resources/shaders/screen.vert", "../resources/shaders/screen.frag");
 
 	// loading textures -------------------------
 	using glm::vec3;
@@ -400,7 +379,7 @@ void DemoApp::draw()
 	// DRAW TO FRAMEBUFFER-----------
 
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-	glViewport(0, 0, 512, 512);
+	glViewport(0, 0, 800, 600);
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -409,8 +388,8 @@ void DemoApp::draw()
 	Gizmos::addTransform(glm::mat4(1));
 	Gizmos::draw(projection * view);
 
-	glUseProgram(projectID);
-	int loc = glGetUniformLocation(projectID, "ProjectionView");
+	glUseProgram(modelShader);
+	int loc = glGetUniformLocation(modelShader, "ProjectionView");
 	glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(projection * view));
 
 	glActiveTexture(GL_TEXTURE0);
@@ -418,30 +397,30 @@ void DemoApp::draw()
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, normalmap);
 
-	loc = glGetUniformLocation(projectID, "diffuse");
+	loc = glGetUniformLocation(modelShader, "diffuse");
 	glUniform1i(loc, 0);
 
-	loc = glGetUniformLocation(projectID, "normal");
+	loc = glGetUniformLocation(modelShader, "normal");
 	glUniform1i(loc, 1);
 
 	glm::vec3 lightColor = {1.0f, 1.0f, 1.0f};
 
-	loc = glGetUniformLocation(projectID, "LightColor");
+	loc = glGetUniformLocation(modelShader, "LightColor");
 	glUniform3fv(loc, 1, glm::value_ptr(lightColor));
 
 	glm::vec3 lightDir = {0.0f, 1.0f, 0.0f};
 
-	loc = glGetUniformLocation(projectID, "LightDir");
+	loc = glGetUniformLocation(modelShader, "LightDir");
 	glUniform3fv(loc, 1, glm::value_ptr(lightDir));
 
 	glm::vec3 cameraPos = {0.3f, 0.3f, 0.3f};
 
-	loc = glGetUniformLocation(projectID, "CameraPos");
+	loc = glGetUniformLocation(modelShader, "CameraPos");
 	glUniform3fv(loc, 1, glm::value_ptr(cameraPos));
 
 	glm::float1 specPow = (128.0f);
 
-	loc = glGetUniformLocation(projectID, "SpecPow");
+	loc = glGetUniformLocation(modelShader, "SpecPow");
 	glUniform1f(loc, 128.0f);
 
 	//vec3 light(sin(glfwGetTime()), 1, cos(glfwGetTime()));
@@ -468,27 +447,25 @@ void DemoApp::draw()
 
 	// bind the framebuffer of the screen (0)
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glViewport(0, 0, 1280, 720);
+	glViewport(0, 0, 800, 600);
 
-	glClearColor(0.75f, 0.75f, 0.75f, 1);
+	//glClearColor(0.75f, 0.75f, 0.75f, 1);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	Gizmos::clear();
-	Gizmos::addTransform(glm::mat4(1));
+	//Gizmos::clear();
+	//Gizmos::addTransform(glm::mat4(1));
 	Gizmos::draw(projection * view);
 
-	glUseProgram(projectID);
-	loc = glGetUniformLocation(projectID, "ProjectionView");
-	glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(projection * view));
+	glUseProgram(screenShader);
 
-	// bind the framebuffer texture
+	loc = glGetUniformLocation(screenShader, "target");
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, fboTexture);
-	loc = glGetUniformLocation(projectID, "diffuse");
 	glUniform1i(loc, 0);
 
 	// draw a quad with that texture
 	glBindVertexArray(VAO);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
 	glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, nullptr);
 
 	glfwSwapBuffers(window);
