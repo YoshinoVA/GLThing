@@ -38,12 +38,13 @@ class DemoApp : public Application
 	//  - a container for the VBO and IBO
 
 	unsigned int texture;
+	unsigned int normalmap;
 
 	float currentTime = 0;
 	float lastTime = 0;
 	float deltaTime = 0;
 
-	void generateGrid(unsigned int rows, unsigned int cols);
+	//void generateGrid(unsigned int rows, unsigned int cols);
 	void generateQuad();
 
 	FBXFile* fbx;

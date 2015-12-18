@@ -1,11 +1,10 @@
 ﻿  DemoApp.cpp
 c:\users\austin.hollenbeck\documents\visual studio 2015\projects\glthing\inc\fbx\fbxfile.h(3): warning C4005: 'GLM_FORCE_PURE': macro redefinition
   c:\users\austin.hollenbeck\documents\visual studio 2015\projects\glthing\inc\fbx\fbxfile.h(3): note: command-line arguments:  see previous definition of 'GLM_FORCE_PURE'
-c:\users\austin.hollenbeck\documents\visual studio 2015\projects\glthing\glthing\demoapp.cpp(201): warning C4305: 'return': truncation from 'int' to 'bool'
-c:\users\austin.hollenbeck\documents\visual studio 2015\projects\glthing\glthing\demoapp.cpp(236): warning C4129: ' ': unrecognized character escape sequence
-c:\users\austin.hollenbeck\documents\visual studio 2015\projects\glthing\glthing\demoapp.cpp(307): warning C4805: '==': unsafe mix of type 'int' and type 'bool' in operation
-c:\users\austin.hollenbeck\documents\visual studio 2015\projects\glthing\glthing\demoapp.cpp(332): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-c:\users\austin.hollenbeck\documents\visual studio 2015\projects\glthing\glthing\demoapp.cpp(329): warning C4101: 'userData': unreferenced local variable
-c:\users\austin.hollenbeck\documents\visual studio 2015\projects\glthing\glthing\demoapp.cpp(324): warning C4101: 'material': unreferenced local variable
-c:\users\austin.hollenbeck\documents\visual studio 2015\projects\glthing\glthing\demoapp.cpp(323): warning C4101: 'vertexAttributes': unreferenced local variable
-  GLThing.vcxproj -> C:\Users\Austin.Hollenbeck\Documents\Visual Studio 2015\Projects\GLThing\Debug\GLThing.exe
+c:\users\austin.hollenbeck\documents\visual studio 2015\projects\glthing\glthing\demoapp.cpp(206): warning C4305: 'return': truncation from 'int' to 'bool'
+c:\users\austin.hollenbeck\documents\visual studio 2015\projects\glthing\glthing\demoapp.cpp(336): warning C4805: '==': unsafe mix of type 'int' and type 'bool' in operation
+c:\users\austin.hollenbeck\documents\visual studio 2015\projects\glthing\glthing\demoapp.cpp(361): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+c:\users\austin.hollenbeck\documents\visual studio 2015\projects\glthing\glthing\demoapp.cpp(358): warning C4101: 'userData': unreferenced local variable
+c:\users\austin.hollenbeck\documents\visual studio 2015\projects\glthing\glthing\demoapp.cpp(353): warning C4101: 'material': unreferenced local variable
+c:\users\austin.hollenbeck\documents\visual studio 2015\projects\glthing\glthing\demoapp.cpp(352): warning C4101: 'vertexAttributes': unreferenced local variable
+  GLThing.vcxproj -> C:\Users\Austin.Hollenbeck\documents\visual studio 2015\Projects\GLThing\Debug\GLThing.exe

@@ -12,8 +12,10 @@ using namespace glm;
 
 struct Vertex
 {
-	vec4 position;
-	vec4 color;
+	float x, y, z, w;
+	float nx, ny, nz, nw;
+	float tx, ty, tz, tw;
+	float s, t;
 };
 
 void DemoApp::createOpenGLBuffers(FBXFile* fbx)
@@ -71,80 +73,77 @@ void DemoApp::cleanupOpenGLBuffers(FBXFile* fbx)
 	}
 }
 
-void DemoApp::generateGrid(unsigned int rows, unsigned int cols)
-{
-	Vertex* aoVerts = new Vertex[rows * cols];
-	for (unsigned int r = 0; r < rows; ++r)
-	{
-		for (unsigned int c = 0; c < cols; ++c)
-		{
-			aoVerts[r * cols + c].position = vec4(
-				(float)c, 0, (float)r, 1);
-
-			vec3 color = vec3(sinf((c / (float)(cols - 1))*(r / (float)(rows - 1))));
-			aoVerts[r*cols + c].color = vec4(color, 1);
-		}
-	}
-
-	unsigned int* auiIndices = new unsigned int[(rows - 1) * (cols - 1) * 6];
-
-	unsigned int index = 0;
-	for (unsigned int r = 0; r < (rows - 1); ++r)
-	{
-		for (unsigned int c = 0; c < (cols - 1); ++c)
-		{
-			//Tri 1
-			auiIndices[index++] = r * cols + c;
-			auiIndices[index++] = (r + 1) * cols + c;
-			auiIndices[index++] = (r + 1) * cols + (c + 1);
-
-			//Tri 2
-			auiIndices[index++] = r * cols + c;
-			auiIndices[index++] = (r + 1) * cols + (c + 1);
-			auiIndices[index++] = r * cols + (c + 1);
-		}
-	}
-
-	glGenBuffers(1, &VBO);
-	glGenBuffers(1, &IBO);
-	glGenVertexArrays(1, &VAO);
-
-	glBindVertexArray(VAO);
-
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, (rows * cols) * sizeof(Vertex),
-		aoVerts, GL_STATIC_DRAW);
-
-	glEnableVertexAttribArray(0);
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), 0);
-	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-		(void*)(sizeof(vec4)));
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, (rows - 1) * (cols - 1) * 6 * sizeof(unsigned int), auiIndices, GL_STATIC_DRAW);
-
-	glBindVertexArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-	indexCount = (rows - 1) * (cols - 1) * 6;
-
-	delete[] aoVerts;
-	delete[] auiIndices;
-}
+//void DemoApp::generateGrid(unsigned int rows, unsigned int cols)
+//{
+//	Vertex* aoVerts = new Vertex[rows * cols];
+//	for (unsigned int r = 0; r < rows; ++r)
+//	{
+//		for (unsigned int c = 0; c < cols; ++c)
+//		{
+//			aoVerts[r * cols + c].position = vec4(
+//				(float)c, 0, (float)r, 1);
+//
+//			vec3 color = vec3(sinf((c / (float)(cols - 1))*(r / (float)(rows - 1))));
+//			aoVerts[r*cols + c].color = vec4(color, 1);
+//		}
+//	}
+//
+//	unsigned int* auiIndices = new unsigned int[(rows - 1) * (cols - 1) * 6];
+//
+//	unsigned int index = 0;
+//	for (unsigned int r = 0; r < (rows - 1); ++r)
+//	{
+//		for (unsigned int c = 0; c < (cols - 1); ++c)
+//		{
+//			//Tri 1
+//			auiIndices[index++] = r * cols + c;
+//			auiIndices[index++] = (r + 1) * cols + c;
+//			auiIndices[index++] = (r + 1) * cols + (c + 1);
+//
+//			//Tri 2
+//			auiIndices[index++] = r * cols + c;
+//			auiIndices[index++] = (r + 1) * cols + (c + 1);
+//			auiIndices[index++] = r * cols + (c + 1);
+//		}
+//	}
+//
+//	glGenBuffers(1, &VBO);
+//	glGenBuffers(1, &IBO);
+//	glGenVertexArrays(1, &VAO);
+//
+//	glBindVertexArray(VAO);
+//
+//	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+//	glBufferData(GL_ARRAY_BUFFER, (rows * cols) * sizeof(Vertex),
+//		aoVerts, GL_STATIC_DRAW);
+//
+//	glEnableVertexAttribArray(0);
+//	glEnableVertexAttribArray(1);
+//	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), 0);
+//	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+//		(void*)(sizeof(vec4)));
+//
+//	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
+//	glBufferData(GL_ELEMENT_ARRAY_BUFFER, (rows - 1) * (cols - 1) * 6 * sizeof(unsigned int), auiIndices, GL_STATIC_DRAW);
+//
+//	glBindVertexArray(0);
+//	glBindBuffer(GL_ARRAY_BUFFER, 0);
+//	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+//
+//	indexCount = (rows - 1) * (cols - 1) * 6;
+//
+//	delete[] aoVerts;
+//	delete[] auiIndices;
+//}
 
 void DemoApp::generateQuad()
 {
-	float vertexData[] = {
-		// POSITION			UV
-		// x,  y,  z,  w	s, t
-		 -5,  0,  5,  1,   0, 1,
-		  5,  0,  5,  1,   1, 1,
-		  5,  0, -5,  1,   1, 0,
-		 -5,  0, -5,  1,   0, 0,
+	Vertex vertexData[] = {
+		{ -5, 0, 5, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1 },
+		{  5, 0, 5, 1, 0, 1, 0, 0, 1, 0, 0, 0, 1, 1 },
+		{  5, 0,-5, 1, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0 },
+		{ -5, 0,-5, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0 },
 	};
-
 	unsigned int indexData[] = {
 		0, 1, 2,
 		0, 2, 3,
@@ -162,17 +161,23 @@ void DemoApp::generateQuad()
 
 	glGenBuffers(1, &VBO);		// Generation
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);		// Bind it, setting it as the current whatever
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 4, vertexData, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * 4, vertexData, GL_STATIC_DRAW);
 
 	glGenBuffers(1, &IBO);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * 6, indexData, GL_STATIC_DRAW);
 
 	glEnableVertexAttribArray(0);	// Position
-	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(float) * 6, 0);
+	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), 0);
 
 	glEnableVertexAttribArray(1);	// UVs
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 6, ((char*)0) + 16);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), ((char*)0) + 48);
+
+	glEnableVertexAttribArray(2);	// UVs
+	glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), ((char*)0) + 16);
+
+	glEnableVertexAttribArray(3);	// UVs
+	glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), ((char*)0) + 32);
 
 	// once we're done, unbind the buffers
 	glBindVertexArray(0);						// VAO comes off first
@@ -206,12 +211,18 @@ bool DemoApp::init()
 	// vertex shader
 	const char* vsSource = "#version 410\n \
 						layout(location=0) in vec4 Position; \
-						layout(location=1) in vec4 Normal; \
-						out vec4 vNormal; \
+						layout(location=1) in vec2 TexCoord; \
+						layout(location=2) in vec4 Normal; \
+						layout(location=3) in vec4 Tangent; \
+						out vec2 vTexCoord; \
+						out vec3 vNormal; \
+						out vec3 vTangent; \
+						out vec3 vBiTangent; \
 						out vec4 vPosition; \
 						uniform mat4 ProjectionView; \
-						void main() { vNormal = Normal; \
-						vPosition = Position; \
+						void main() { vTexCoord = TexCoord; \
+						vNormal = Normal.xyz; \
+						vBiTangent = cross(vNormal, vTangent); \
 						gl_Position = ProjectionView * Position; }";
 
 	unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
@@ -220,20 +231,26 @@ bool DemoApp::init()
 
 	// fragment shader
 	const char* fsSource = "#version 410\n \
-						in vec4 vNormal; \
-						in vec4 vPosition; \
-						out vec4 FragColor; \
-						uniform vec3 LightDir; \
-						uniform vec3 LightColor; \
-						uniform vec3 CameraPos; \
-						uniform float SpecPow; \
-						void main() { \
-						float d = max(0, dot(normalize(vNormal.xyz), LightDir)); \
-						vec3 E = normalize(CameraPos - vPosition.xyz); \
-						vec3 R = reflect(-LightDir, vNormal.xyz); \
-						float s = max(0, dot(E, R)); \
-						s = pow(s, SpecPow); \
-						FragColor = vec4(LightColor * d + LightColor * s, 1);} \ ";
+							in vec2 vTexCoord; \
+							in vec3 vNormal; \
+							in vec3 vTangent; \
+							in vec3 vBiTangent; \
+							out vec4 FragColor; \
+							uniform vec3 LightDir; \
+							uniform sampler2D diffuse; \
+							uniform sampler2D normal; \
+							void main() { \
+							mat3 TBN = mat3( \
+							normalize( vTangent ), \
+							normalize( vBiTangent ), \
+							normalize( vNormal )); \
+							vec3 N = texture(normal, \
+							vTexCoord).xyz * 2 - 1; \
+							float d = max( 0, dot( \
+							normalize( TBN * N ), \
+							normalize( LightDir ))); \
+							FragColor = texture(diffuse, vTexCoord); \
+							FragColor.rgb = FragColor.rgb * d;}";
 
 	unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
 	glShaderSource(fragmentShader, 1, (const char**)&fsSource, 0);
@@ -274,7 +291,8 @@ bool DemoApp::init()
 	int imageHeight = 0;
 	int imageFormat = 0;
 
-	unsigned char* data = stbi_load("crate.png", &imageWidth, &imageHeight, &imageFormat, STBI_default);
+	//Load Diffuse mapping
+	unsigned char* data = stbi_load("../resources/textures/rock_diffuse.tga", &imageWidth, &imageHeight, &imageFormat, STBI_default);
 
 	fbx = new FBXFile();
 	fbx->load("../resources/FBX/soulspear/soulspear.fbx");
@@ -282,6 +300,17 @@ bool DemoApp::init()
 
 	glGenTextures(1, &texture);
 	glBindTexture(GL_TEXTURE_2D, texture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imageWidth, imageHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+	stbi_image_free(data);
+
+	//Load Normal Mapping
+	data = stbi_load("../resources/textures/rock_normal.tga", &imageWidth, &imageHeight, &imageFormat, STBI_default);
+
+	glGenTextures(1, &normalmap);
+	glBindTexture(GL_TEXTURE_2D, normalmap);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imageWidth, imageHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -354,9 +383,13 @@ void DemoApp::draw()
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, normalmap);
 
 	loc = glGetUniformLocation(projectID, "diffuse");
 	glUniform1i(loc, 0);
+	loc = glGetUniformLocation(projectID, "normal");
+	glUniform1i(loc, 1);
 
 	glm::vec3 lightColor = {1.0f, 1.0f, 1.0f};
 
@@ -377,6 +410,10 @@ void DemoApp::draw()
 
 	loc = glGetUniformLocation(projectID, "SpecPow");
 	glUniform1f(loc, 128.0f);
+
+	vec3 light(sin(glfwGetTime()), 1, cos(glfwGetTime()));
+	loc = glGetUniformLocation(program, "LightDir");
+	glUniform3f(loc, light.x, light.y, light.z);
 
 	glBindVertexArray(VAO);
 	glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, nullptr);
