@@ -2,6 +2,6 @@
 c:\users\austin.hollenbeck\documents\visual studio 2015\projects\glthing\inc\fbx\fbxfile.h(3): warning C4005: 'GLM_FORCE_PURE': macro redefinition
   c:\users\austin.hollenbeck\documents\visual studio 2015\projects\glthing\inc\fbx\fbxfile.h(3): note: command-line arguments:  see previous definition of 'GLM_FORCE_PURE'
 c:\users\austin.hollenbeck\documents\visual studio 2015\projects\glthing\glthing\demoapp.cpp(266): warning C4305: 'return': truncation from 'int' to 'bool'
-c:\users\austin.hollenbeck\documents\visual studio 2015\projects\glthing\glthing\demoapp.cpp(359): warning C4805: '==': unsafe mix of type 'int' and type 'bool' in operation
-c:\users\austin.hollenbeck\documents\visual studio 2015\projects\glthing\glthing\demoapp.cpp(366): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+c:\users\austin.hollenbeck\documents\visual studio 2015\projects\glthing\glthing\demoapp.cpp(372): warning C4805: '==': unsafe mix of type 'int' and type 'bool' in operation
+c:\users\austin.hollenbeck\documents\visual studio 2015\projects\glthing\glthing\demoapp.cpp(379): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
   GLThing.vcxproj -> C:\Users\Austin.Hollenbeck\documents\visual studio 2015\Projects\GLThing\Debug\GLThing.exe

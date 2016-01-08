@@ -270,6 +270,7 @@ bool DemoApp::init()
 
 	modelShader = loadShader("../resources/shaders/basic.vert","../resources/shaders/basic.frag");
 	screenShader = loadShader("../resources/shaders/screen.vert", "../resources/shaders/screen.frag");
+	shadowShader = loadShader("../resources/shaders/shadow.vert", "../resources/shaders/shadow.frag");
 
 	// loading textures -------------------------
 	using glm::vec3;
@@ -280,8 +281,10 @@ bool DemoApp::init()
 	int imageHeight = 0;
 	int imageFormat = 0;
 
+	unsigned char* data = stbi_load("../resources/textures/crate.png", &imageWidth, &imageHeight, &imageFormat, STBI_default);
+
 	//Load Diffuse mapping
-	unsigned char* data = stbi_load("../resources/FBX/soulspear/soulspear_diffuse.tga", &imageWidth, &imageHeight, &imageFormat, STBI_default);
+	data = stbi_load("../resources/FBX/soulspear/soulspear_diffuse.tga", &imageWidth, &imageHeight, &imageFormat, STBI_default);
 
 	glGenTextures(1, &texture);
 	glActiveTexture(GL_TEXTURE0);
@@ -298,7 +301,6 @@ bool DemoApp::init()
 	glGenTextures(1, &normalmap);
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, normalmap);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imageWidth, imageHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
@@ -322,10 +324,21 @@ bool DemoApp::init()
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, fboDepth);
 
+	//16-bit depth component for FBO texture
+	glGenTextures(1, &fboDepth);
+	glBindTexture(GL_TEXTURE_2D, fboDepth);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH, GL_DEPTH_COMPONENT16, 800, 600, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	//glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, fboDepth, 0);
+
 	// assign attachments to the FBO
 	//  - attachments tell the FBO what textures to render the buffer onto
 	GLenum drawBuffers[] = { GL_COLOR_ATTACHMENT0 };
 	glDrawBuffers(1, drawBuffers);
+	//glDrawBuffer(GL_NONE);
 
 	// validate/verify that the FBO is in working order
 	GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -336,9 +349,9 @@ bool DemoApp::init()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	// Load meshes ---------------------
-	//fbx = new FBXFile();
-	//fbx->load("../resources/FBX/soulspear/soulspear.fbx");
-	//createOpenGLBuffers(fbx);
+	fbx = new FBXFile();
+	fbx->load("../resources/FBX/soulspear/soulspear.fbx");
+	createOpenGLBuffers(fbx);
 
 	//generateGrid(10, 10);
 	generateQuad();
@@ -373,8 +386,12 @@ bool DemoApp::update()
 // - drawing meshes to the backbuffer
 void DemoApp::draw()
 {
-	mat4 view = glm::lookAt(vec3(-10, -10, 10), vec3(0), vec3(0, 1, 0));
+	mat4 view = glm::lookAt(vec3(10, 10, 10), vec3(0), vec3(0, 1, 0));
 	mat4 projection = glm::perspective(glm::pi<float>() * 0.25f, 16 / 9.f, 0.1f, 1000.f);
+
+	//set the direction of the light
+	glm::vec3 lightDirection = glm::normalize(glm::vec3(1, 2.5f, 1));
+	glm::mat4 lightProj = glm::ortho<float>(-10, 10, -10, 10, -10, 10);
 
 	// DRAW TO FRAMEBUFFER-----------
 
@@ -384,8 +401,6 @@ void DemoApp::draw()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	Gizmos::clear();
-	Gizmos::addSphere(glm::vec3(0, 0, 0), 5.f, 15, 15, glm::vec4(0, 1, 1, 1));
-	Gizmos::addTransform(glm::mat4(1));
 	Gizmos::draw(projection * view);
 
 	glUseProgram(modelShader);
@@ -422,13 +437,6 @@ void DemoApp::draw()
 
 	loc = glGetUniformLocation(modelShader, "SpecPow");
 	glUniform1f(loc, 128.0f);
-
-	//vec3 light(sin(glfwGetTime()), 1, cos(glfwGetTime()));
-	//loc = glGetUniformLocation(program, "LightDir");
-	//glUniform3f(loc, light.x, light.y, light.z);
-
-	//glBindVertexArray(VAO);
-	//glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, nullptr);
 
 	if (fbx != nullptr)
 	{

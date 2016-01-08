@@ -26,6 +26,7 @@ class DemoApp : public Application
 
 	unsigned int modelShader;
 	unsigned int screenShader;
+	unsigned int shadowShader;
 
 	unsigned int indexCount;
 	unsigned int VBO, IBO, VAO, FBO;
