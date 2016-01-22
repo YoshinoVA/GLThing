@@ -11,5 +11,5 @@ uniform vec3 LightDir;
 void main()
 { 
 	float d = max(0, dot(normalize(vNormal.xyz), LightDir)); 
-	FragColor = vec4(d, d, d, 1);
+	FragColor = texture(diffuse, vTexCoord);
 }

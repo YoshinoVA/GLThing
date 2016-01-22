@@ -1,7 +1,18 @@
-﻿  DemoApp.cpp
+﻿  Source.cpp
+c:\users\austin.hollenbeck\documents\visual studio 2015\projects\glthing\inc\fbx\fbxfile.h(3): warning C4005: 'GLM_FORCE_PURE': macro redefinition
+  c:\users\austin.hollenbeck\documents\visual studio 2015\projects\glthing\inc\fbx\fbxfile.h(3): note: command-line arguments:  see previous definition of 'GLM_FORCE_PURE'
+  DemoApp.cpp
 c:\users\austin.hollenbeck\documents\visual studio 2015\projects\glthing\inc\fbx\fbxfile.h(3): warning C4005: 'GLM_FORCE_PURE': macro redefinition
   c:\users\austin.hollenbeck\documents\visual studio 2015\projects\glthing\inc\fbx\fbxfile.h(3): note: command-line arguments:  see previous definition of 'GLM_FORCE_PURE'
 c:\users\austin.hollenbeck\documents\visual studio 2015\projects\glthing\glthing\demoapp.cpp(266): warning C4305: 'return': truncation from 'int' to 'bool'
-c:\users\austin.hollenbeck\documents\visual studio 2015\projects\glthing\glthing\demoapp.cpp(372): warning C4805: '==': unsafe mix of type 'int' and type 'bool' in operation
-c:\users\austin.hollenbeck\documents\visual studio 2015\projects\glthing\glthing\demoapp.cpp(379): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+c:\users\austin.hollenbeck\documents\visual studio 2015\projects\glthing\glthing\demoapp.cpp(382): warning C4805: '==': unsafe mix of type 'int' and type 'bool' in operation
+c:\users\austin.hollenbeck\documents\visual studio 2015\projects\glthing\glthing\demoapp.cpp(389): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+  Camera.cpp
+  Gizmos.cpp
+  Running Code Analysis for C/C++...
+  Generating Code...
+  gl_core_4_4.c
+fbxloader_d.lib(FBXFile.obj) : warning LNK4099: PDB 'FBXFix.pdb' was not found with 'fbxloader_d.lib(FBXFile.obj)' or at 'C:\Users\Austin.Hollenbeck\documents\visual studio 2015\Projects\GLThing\Debug\FBXFix.pdb'; linking object as if no debug info
   GLThing.vcxproj -> C:\Users\Austin.Hollenbeck\documents\visual studio 2015\Projects\GLThing\Debug\GLThing.exe
+c:\users\austin.hollenbeck\documents\visual studio 2015\projects\glthing\inc\gl_core_4_4.c(80): warning C6387: 'glMod' could be '0':  this does not adhere to the specification for the function 'GetProcAddress'. 
+c:\users\austin.hollenbeck\documents\visual studio 2015\projects\glthing\glthing\demoapp.cpp(65): warning C6283: 'infoLog' is allocated with array new [], but deleted with scalar delete.

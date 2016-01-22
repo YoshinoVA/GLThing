@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<DEFECTS>
+  <DEFECT>
+    <SFA>
+      <FILEPATH>c:\users\austin.hollenbeck\documents\visual studio 2015\projects\glthing\glthing\</FILEPATH>
+      <FILENAME>demoapp.cpp</FILENAME>
+      <LINE>65</LINE>
+      <COLUMN>9</COLUMN>
+    </SFA>
+    <DEFECTCODE>6283</DEFECTCODE>
+    <DESCRIPTION>'infoLog' is allocated with array new [], but deleted with scalar delete.</DESCRIPTION>
+    <FUNCTION>loadShader</FUNCTION>
+    <DECORATED>?loadShader@@YAHPBD0@Z</DECORATED>
+    <FUNCLINE>22</FUNCLINE>
+    <PATH>
+      <SFA>
+        <FILEPATH>c:\users\austin.hollenbeck\documents\visual studio 2015\projects\glthing\glthing\</FILEPATH>
+        <FILENAME>demoapp.cpp</FILENAME>
+        <LINE>60</LINE>
+        <COLUMN>18</COLUMN>
+      </SFA>
+      <SFA>
+        <FILEPATH>c:\users\austin.hollenbeck\documents\visual studio 2015\projects\glthing\glthing\</FILEPATH>
+        <FILENAME>demoapp.cpp</FILENAME>
+        <LINE>65</LINE>
+        <COLUMN>9</COLUMN>
+      </SFA>
+    </PATH>
+  </DEFECT>
+  <DEFECT>
+    <SFA>
+      <FILEPATH>c:\users\austin.hollenbeck\documents\visual studio 2015\projects\glthing\glthing\</FILEPATH>
+      <FILENAME>demoapp.cpp</FILENAME>
+      <LINE>266</LINE>
+      <COLUMN>10</COLUMN>
+    </SFA>
+    <DEFECTCODE>6326</DEFECTCODE>
+    <DESCRIPTION>Potential comparison of a constant with another constant.</DESCRIPTION>
+    <FUNCTION>DemoApp::init</FUNCTION>
+    <DECORATED>?init@DemoApp@@EAE_NXZ</DECORATED>
+    <FUNCLINE>254</FUNCLINE>
+    <PATH />
+  </DEFECT>
+</DEFECTS>

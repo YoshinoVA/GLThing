@@ -243,7 +243,7 @@ void DemoApp::generateQuad()
 	glBindBuffer(GL_ARRAY_BUFFER, 0);			// VBO or IBO
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);	// whatever's left
 
-	indexCount = 6;
+	//indexCount = 6;
 }
 
 // - creates the window
@@ -283,11 +283,20 @@ bool DemoApp::init()
 
 	unsigned char* data = stbi_load("../resources/textures/crate.png", &imageWidth, &imageHeight, &imageFormat, STBI_default);
 
+	glGenTextures(1, &texture);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, texture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imageWidth, imageHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+	stbi_image_free(data);
+
 	//Load Diffuse mapping
 	data = stbi_load("../resources/FBX/soulspear/soulspear_diffuse.tga", &imageWidth, &imageHeight, &imageFormat, STBI_default);
 
 	glGenTextures(1, &texture);
-	glActiveTexture(GL_TEXTURE0);
+	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, texture);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imageWidth, imageHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -299,7 +308,7 @@ bool DemoApp::init()
 	data = stbi_load("../resources/FBX/soulspear/soulspear_normal.tga", &imageWidth, &imageHeight, &imageFormat, STBI_default);
 
 	glGenTextures(1, &normalmap);
-	glActiveTexture(GL_TEXTURE1);
+	glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_2D, normalmap);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -351,6 +360,7 @@ bool DemoApp::init()
 	// Load meshes ---------------------
 	fbx = new FBXFile();
 	fbx->load("../resources/FBX/soulspear/soulspear.fbx");
+	//fbx->load("../resources/textures/crate.png");
 	createOpenGLBuffers(fbx);
 
 	//generateGrid(10, 10);
@@ -399,7 +409,7 @@ void DemoApp::draw()
 	glViewport(0, 0, 800, 600);
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+             
 	Gizmos::clear();
 	Gizmos::draw(projection * view);
 
@@ -409,6 +419,7 @@ void DemoApp::draw()
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture);
+
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, normalmap);
 
